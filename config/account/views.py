@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib import auth
 from django.contrib.auth import authenticate
+from django.contrib.auth.hashers import check_password
 
 
 class signup(APIView):
@@ -28,8 +29,6 @@ class signup(APIView):
 
 class signin(APIView):
     def post(self, request):
-        serializer=UserSerializer(data=request.data)
-
         userid=request.data['userid']
         password=request.data['password']
         user=authenticate(request,userid=userid, password=password)
@@ -55,3 +54,33 @@ class signout(APIView):
             "msg":"ok"
         }
         return Response(data, status=status.HTTP_200_OK)
+
+class update_password(APIView):
+    def post(self, request):
+        user=request.user
+        origin_password=request.data['origin_password']
+
+        if check_password(origin_password,user.password):
+            password1=request.data["password1"]
+            password2=request.data["password2"]
+
+            if password1==password2:
+                user.set_password(password1)
+                user.save()
+                auth.login(request,user)
+                data={
+                    "msg":"ok"
+                }
+                return Response(data,status=status.HTTP_202_ACCEPTED)
+            else:
+                data={
+                    "msg":"비밀번호가 일치하지 않습니다."
+                }
+                return Response(data,status=status.HTTP_406_NOT_ACCEPTABLE)
+        
+        else:
+            data={
+                    "msg":"기존 비밀번호가 알맞지 않습니다."
+                }
+            return Response(data,status=status.HTTP_401_UNAUTHORIZED)
+        
