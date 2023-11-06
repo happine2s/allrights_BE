@@ -4,9 +4,12 @@ from .serializers import *
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from django.contrib import auth
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
+from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
 
 
 class signup(APIView):
@@ -83,4 +86,26 @@ class update_password(APIView):
                     "msg":"기존 비밀번호가 알맞지 않습니다."
                 }
             return Response(data,status=status.HTTP_401_UNAUTHORIZED)
+
+class mypage(APIView):
+    permission_classes = (IsAuthenticated,)
+    serializer_class = MypageSerializer
+
+    def get(self, request):
+        serializer = self.serializer_class(request.user)
+        data={
+            "user_info":serializer.data,
+        }
+        return Response(data, status=status.HTTP_200_OK)
+    
+    def put(self, request):
+        serializer_data = request.data
+        serializer = self.serializer_class(
+            request.user, data=serializer_data, partial=True
+        )
         
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
