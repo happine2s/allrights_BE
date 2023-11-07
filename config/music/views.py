@@ -10,7 +10,21 @@ from music.serializers import MusicSerializer
 class MusicList(APIView):
     def get(self, request):
         sort_by = request.query_params.get('sort_by', '-upload_date')  # 기본 정렬은 업로드 날짜
-        music = Music.objects.all().order_by(sort_by)
+        if sort_by == 'length':
+            music = Music.objects.all().order_by('length')
+
+        elif sort_by == '-length':
+            music = Music.objects.all().order_by('-length')
+        
+        elif sort_by == 'downloads':
+            music = Music.objects.all().order_by('downloads')
+        
+        elif sort_by == '-downloads':
+            music = Music.objects.all().order_by('-downloads')
+        
+        else:
+            music = Music.objects.all().order_by('-upload_date')
+        
         serializer = MusicSerializer(music, many=True)
         return Response(serializer.data)
 
