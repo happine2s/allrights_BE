@@ -61,32 +61,39 @@ class signout(APIView):
 
 class update_password(APIView):
     def post(self, request):
-        user=request.user
-        origin_password=request.data['origin_password']
+        try:
+            user=request.user
+            origin_password=request.data['origin_password']
 
-        if check_password(origin_password,user.password):
-            password1=request.data["password1"]
-            password2=request.data["password2"]
+            if check_password(origin_password,user.password):
+                password1=request.data["password1"]
+                password2=request.data["password2"]
 
-            if password1==password2:
-                user.set_password(password1)
-                user.save()
-                auth.login(request,user)
-                data={
-                    "msg":"ok"
-                }
-                return Response(data,status=status.HTTP_202_ACCEPTED)
+                if password1==password2:
+                    user.set_password(password1)
+                    user.save()
+                    auth.login(request,user)
+                    data={
+                        "msg":"ok"
+                    }
+                    return Response(data,status=status.HTTP_202_ACCEPTED)
+                else:
+                    data={
+                        "msg":"비밀번호가 일치하지 않습니다."
+                    }
+                    return Response(data,status=status.HTTP_406_NOT_ACCEPTABLE)
+            
             else:
                 data={
-                    "msg":"비밀번호가 일치하지 않습니다."
-                }
-                return Response(data,status=status.HTTP_406_NOT_ACCEPTABLE)
-        
-        else:
+                        "msg":"기존 비밀번호가 알맞지 않습니다."
+                    }
+                return Response(data,status=status.HTTP_401_UNAUTHORIZED)
+        except:
             data={
-                    "msg":"기존 비밀번호가 알맞지 않습니다."
+                    "msg":"로그인 상태가 아닙니다."
                 }
-            return Response(data,status=status.HTTP_401_UNAUTHORIZED)
+            return Response(data,status=status.HTTP_403_FORBIDDEN)
+            
 
 class update_mypage(APIView): # 로그인한 사용자의 정보 수정
     permission_classes = (IsAuthenticated,)
