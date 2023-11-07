@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 class Music(models.Model):
     MUSIC_TYPES = (
@@ -42,7 +43,7 @@ class Music(models.Model):
     genre = models.CharField(max_length=100, choices=GENRE_TYPES)
     instruments = models.CharField(max_length=100, choices=INSTRUMENTS_TYPES)
     mood = models.CharField(max_length=100, choices=MOOD_TYPES)
-    length = models.CharField(max_length=20)
+    length = models.IntegerField(max_length=20)
     description = models.TextField()
-
-    
+    upload_date = models.DateTimeField(default=timezone.now)  # 업로드 날짜 및 시간
+    downloads = models.PositiveIntegerField(default=0)  # 다운로드 횟수
