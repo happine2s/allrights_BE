@@ -9,6 +9,3 @@ urlpatterns = [
     path('search/', MusicSearch.as_view(), name='music-search'),
     path('download/<int:music_id>/', download_music, name='download-music'),
 ]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
