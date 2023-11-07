@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from account.models import User
 
 class Music(models.Model):
     MUSIC_TYPES = (
@@ -47,3 +48,5 @@ class Music(models.Model):
     description = models.TextField()
     upload_date = models.DateTimeField(default=timezone.now)  # 업로드 날짜 및 시간
     downloads = models.PositiveIntegerField(default=0)  # 다운로드 횟수
+    author=models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+    
