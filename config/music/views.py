@@ -1,11 +1,12 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework import status
 from .models import Music
-from django.views.generic import FormView
 from django.db.models import Q
 from music.serializers import MusicSerializer
+from django.http import FileResponse
+from django.http import Http404
 
 class MusicList(APIView):
     def get(self, request):
@@ -78,3 +79,9 @@ class MusicSearch(APIView):
         serializer = MusicSerializer(music_list, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+        
+def download_music(request, music_id):
+    music = get_object_or_404(Music, pk=music_id)
+    music_file = music.music_file
+    response = FileResponse(music_file, as_attachment=True)
+    return response
