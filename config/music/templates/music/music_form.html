@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>음악 추가</title>
+</head>
+<body>
+    <h1>음악 추가</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">음악 등록</button>
+    </form>
+</body>
+</html>
