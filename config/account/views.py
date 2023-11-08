@@ -1,6 +1,8 @@
 from django.shortcuts import render
 from .models import User
 from .serializers import *
+from music.models import Music
+from music.serializers import *
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -8,8 +10,10 @@ from rest_framework.permissions import IsAuthenticated
 from django.contrib import auth
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
-from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
+from django.http import Http404
+from django.core import serializers
+import json
+from rest_framework.utils.encoders import JSONEncoder
 
 
 class signup(APIView):
@@ -60,45 +64,45 @@ class signout(APIView):
 
 class update_password(APIView):
     def post(self, request):
-        user=request.user
-        origin_password=request.data['origin_password']
+        try:
+            user=request.user
+            origin_password=request.data['origin_password']
 
-        if check_password(origin_password,user.password):
-            password1=request.data["password1"]
-            password2=request.data["password2"]
+            if check_password(origin_password,user.password):
+                password1=request.data["password1"]
+                password2=request.data["password2"]
 
-            if password1==password2:
-                user.set_password(password1)
-                user.save()
-                auth.login(request,user)
-                data={
-                    "msg":"ok"
-                }
-                return Response(data,status=status.HTTP_202_ACCEPTED)
+                if password1==password2:
+                    user.set_password(password1)
+                    user.save()
+                    auth.login(request,user)
+                    data={
+                        "msg":"ok"
+                    }
+                    return Response(data,status=status.HTTP_202_ACCEPTED)
+                else:
+                    data={
+                        "msg":"비밀번호가 일치하지 않습니다."
+                    }
+                    return Response(data,status=status.HTTP_406_NOT_ACCEPTABLE)
+            
             else:
                 data={
-                    "msg":"비밀번호가 일치하지 않습니다."
-                }
-                return Response(data,status=status.HTTP_406_NOT_ACCEPTABLE)
-        
-        else:
+                        "msg":"기존 비밀번호가 알맞지 않습니다."
+                    }
+                return Response(data,status=status.HTTP_401_UNAUTHORIZED)
+        except:
             data={
-                    "msg":"기존 비밀번호가 알맞지 않습니다."
+                    "msg":"로그인 상태가 아닙니다."
                 }
-            return Response(data,status=status.HTTP_401_UNAUTHORIZED)
+            return Response(data,status=status.HTTP_403_FORBIDDEN)
+            
 
-class mypage(APIView):
+class update_mypage(APIView): # 로그인한 사용자의 정보 수정
     permission_classes = (IsAuthenticated,)
     serializer_class = MypageSerializer
 
-    def get(self, request):
-        serializer = self.serializer_class(request.user)
-        data={
-            "user_info":serializer.data,
-        }
-        return Response(data, status=status.HTTP_200_OK)
-    
-    def put(self, request):
+    def put(self, request): # 비밀번호는 변경 안됨
         serializer_data = request.data
         serializer = self.serializer_class(
             request.user, data=serializer_data, partial=True
@@ -109,3 +113,32 @@ class mypage(APIView):
         
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+class mypage(APIView): # url의 user_pk에 대한 마이페이지
+    def get_object(self, user_pk):
+        try:
+            return User.objects.get(pk=user_pk)
+        except User.DoesNotExist:
+            raise Http404
+
+    def get(self, request, user_pk):
+        try:
+            user = self.get_object(user_pk)
+            user_serializer = MypageUserSerializer(user)
+        except:
+            data={
+                "msg":"일치하는 회원 정보가 없습니다."
+            }
+            return Response(data, status=status.HTTP_404_NOT_FOUND)
+        else:
+            music=Music.objects.filter(author=user_pk)
+            music_serializer=MypageMusicSerializer(music, many=True)
+            like_music = user.like_music.all()
+            like_serializer = MypageMusicSerializer(like_music, many=True)
+
+            data={
+                "user_info":user_serializer.data,
+                "post": music_serializer.data,
+                "save":like_serializer.data
+            }
+
+            return Response(data, status=status.HTTP_200_OK)
