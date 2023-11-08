@@ -2,7 +2,7 @@ from django.shortcuts import render
 from .models import User
 from .serializers import *
 from music.models import Music
-from music.serializers import MusicSerializer
+from music.serializers import *
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -120,13 +120,19 @@ class mypage(APIView): # url의 user_pk에 대한 마이페이지
     def get(self, request, user_pk):
         try:
             user = self.get_object(user_pk)
-            serializer = UserSerializer(user)
-            data={
-                "user_info":serializer.data,
-            }
-            return Response(data, status=status.HTTP_200_OK)
+            user_serializer = MypageUserSerializer(user)
         except:
             data={
                 "msg":"일치하는 회원 정보가 없습니다."
             }
             return Response(data, status=status.HTTP_404_NOT_FOUND)
+        else:
+            music=Music.objects.filter(author=user_pk)
+            music_serializer=MypageMusicSerializer(music, many=True)
+            
+            data={
+                "user_info":user_serializer.data,
+                "post": music_serializer.data
+            }
+
+            return Response(data, status=status.HTTP_200_OK)

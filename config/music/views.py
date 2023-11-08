@@ -1,12 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from .models import Music
 from django.db.models import Q
 from music.serializers import *
 from django.http import FileResponse
 from django.http import Http404
+
 
 class MusicList(APIView):
     def get(self, request):
@@ -32,9 +33,14 @@ class MusicList(APIView):
     def post(self, request):
         serializer = MusicSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(author=self.request.author)
+            try: # 요청 데이터에 유저 정보가 있다면 작성자에 추가
+                if self.request.data['author']:
+                    serializer.save(author=self.request.user)
+            except: # 없다면 null
+                serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class MusicDetail(APIView):
     def get_object(self, pk):
@@ -61,6 +67,7 @@ class MusicDetail(APIView):
         music.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+
 class MusicSearch(APIView):
     def get(self, request):
         music_list = Music.objects.none()  # 이전 검색 결과 초기화
@@ -79,6 +86,7 @@ class MusicSearch(APIView):
         serializer = MusicSerializer(music_list, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 def download_music(request, music_id):
     music = get_object_or_404(Music, pk=music_id)

@@ -35,3 +35,9 @@ class MypageSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+
+class MypageUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['userid', 'username', 'img','bio']
