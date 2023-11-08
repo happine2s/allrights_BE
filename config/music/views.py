@@ -7,6 +7,7 @@ from django.db.models import Q
 from music.serializers import *
 from django.http import FileResponse
 from django.http import Http404
+from rest_framework.parsers import MultiPartParser, FormParser
 
 class MusicList(APIView):
     def get(self, request):
@@ -28,7 +29,7 @@ class MusicList(APIView):
         
         serializer = MusicSerializer(music, many=True)
         return Response(serializer.data)
-
+    
     def post(self, request):
         serializer = MusicSerializer(data=request.data)
         if serializer.is_valid():
