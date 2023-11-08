@@ -49,4 +49,4 @@ class Music(models.Model):
     upload_date = models.DateTimeField(default=timezone.now)  # 업로드 날짜 및 시간
     downloads = models.PositiveIntegerField(default=0)  # 다운로드 횟수
     author=models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    
+    liker=models.ManyToManyField(User,related_name='like_music',default=[],blank=True)
