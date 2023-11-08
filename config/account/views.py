@@ -13,6 +13,7 @@ from django.contrib.auth.hashers import check_password
 from django.http import Http404
 from django.core import serializers
 import json
+from rest_framework.utils.encoders import JSONEncoder
 
 
 class signup(APIView):
@@ -131,14 +132,13 @@ class mypage(APIView): # url의 user_pk에 대한 마이페이지
         else:
             music=Music.objects.filter(author=user_pk)
             music_serializer=MypageMusicSerializer(music, many=True)
-            # like_music = user.like_music.all()
-            like_music = json.loads(serializers.serialize('json', user.like_music.all()))
-            # jsonObject = json.loads(like_music)
+            like_music = user.like_music.all()
+            like_serializer = MypageMusicSerializer(like_music, many=True)
 
             data={
                 "user_info":user_serializer.data,
                 "post": music_serializer.data,
-                "save":like_music
+                "save":like_serializer.data
             }
 
             return Response(data, status=status.HTTP_200_OK)
