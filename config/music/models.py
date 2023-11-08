@@ -1,6 +1,9 @@
 from django.db import models
 from django.utils import timezone
 from account.models import User
+from mutagen.mp3 import MP3
+from mutagen.mp4 import MP4
+
 
 class Music(models.Model):
     MUSIC_TYPES = (
@@ -44,9 +47,16 @@ class Music(models.Model):
     genre = models.CharField(max_length=100, choices=GENRE_TYPES)
     instruments = models.CharField(max_length=100, choices=INSTRUMENTS_TYPES)
     mood = models.CharField(max_length=100, choices=MOOD_TYPES)
-    length = models.PositiveIntegerField(default=0)
+    length = models.FloatField(null=True, blank=True)
     description = models.TextField()
     upload_date = models.DateTimeField(default=timezone.now)  # 업로드 날짜 및 시간
     downloads = models.PositiveIntegerField(default=0)  # 다운로드 횟수
     author=models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     liker=models.ManyToManyField(User,related_name='like_music',default=[],blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.length and self.music_file:
+            audio = MP4(self.music_file.path)
+            self.length = audio.info.length
+        super(Music, self).save(*args, **kwargs)
+
