@@ -1,3 +1,4 @@
+from datetime import timedelta
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -36,6 +37,7 @@ class MusicList(APIView):
         serializer = MusicSerializer(music, many=True)
         return Response(serializer.data)
 
+
 class MusicUpload(generics.CreateAPIView):
     queryset = Music.objects.all()
     serializer_class = MusicSerializer
@@ -58,13 +60,17 @@ class MusicUpload(generics.CreateAPIView):
         # 파일을 DB에 저장
         music.save()
 
-        # Mutagen을 사용하여 length 계산
-        file_extension = music_file.name.split('.')[-1].lower()
-        audio = MutagenFile(music_file.temporary_file_path())  # 파일 이름 설정을 위해 temporary_file_path() 사용
+        # # Mutagen을 사용하여 length 계산
+        # file_extension = music_file.name.split('.')[-1].lower()
+        # audio = MutagenFile(music_file.temporary_file_path())  # 파일 이름 설정을 위해 temporary_file_path() 사용
 
-        if file_extension in ['.mp3', '.m4a']:
-            music.length = audio.info.length
-            music.save()
+        # if file_extension in ['.mp3', '.m4a']:
+        #     # 음원 길이를 초로 가져오기
+        #     #length_in_seconds = int(audio.info.length)
+
+        #     # 초를 분과 초로 변환하여 DurationField에 저장
+        #     music.length = timedelta(audio.info.length)
+        #     music.save()
 
         serializer = MusicSerializer(music)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -109,7 +115,7 @@ class MusicDetail(APIView):
 class MusicSearch(APIView):
     def get(self, request):
         music_list = Music.objects.none()  # 이전 검색 결과 초기화
-        search_word = request.query_params.get('search_word', '')
+        search_word = request.query_params.get('search_words', '')
 
         # 검색어를 사용하여 Music 모델에서 필터링
         music_list = Music.objects.filter(
@@ -117,13 +123,30 @@ class MusicSearch(APIView):
             Q(description__icontains=search_word) |
             Q(genre__icontains=search_word) |
             Q(instruments__icontains=search_word) |
-            Q(mood__icontains=search_word)
+            Q(mood__icontains=search_word) |
+            Q(author__username__icontains=search_word) |
+            Q(music_type__icontains=search_word)
         ).distinct()
 
-        # 시리얼라이저를 사용하여 검색 결과를 JSON으로 변환
-        serializer = MusicSerializer(music_list, many=True)
+        # 검색어와 정확히 일치하는지 확인
+        exact_match_music = Music.objects.filter(
+            Q(title__iexact=search_word) |
+            Q(description__iexact=search_word) |
+            Q(genre__iexact=search_word) |
+            Q(instruments__iexact=search_word) |
+            Q(mood__iexact=search_word) |
+            Q(author__username__icontains=search_word) |
+            Q(music_type__icontains=search_word)
+        ).first()
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        if exact_match_music:
+            # 정확한 일치의 경우 해당 음악의 JSON 데이터를 직렬화하여 반환
+            serializer = MusicSerializer(exact_match_music)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # 검색 결과가 없으면 빈 JSON 응답 반환
+        return Response({}, status=status.HTTP_404_NOT_FOUND)
+
 
 
 def download_music(request, music_id):
