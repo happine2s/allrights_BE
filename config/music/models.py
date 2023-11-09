@@ -1,8 +1,10 @@
+import os
 from django.db import models
 from django.utils import timezone
 from account.models import User
 from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4
+from mutagen import File as MutagenFile
 
 
 class Music(models.Model):
@@ -51,6 +53,22 @@ class Music(models.Model):
     description = models.TextField()
     upload_date = models.DateTimeField(default=timezone.now)  # 업로드 날짜 및 시간
     downloads = models.PositiveIntegerField(default=0)  # 다운로드 횟수
+
+    music_image = models.ImageField(upload_to='image/', blank=True)
+
+    # def save(self, *args, **kwargs):
+    #     if not self.length and self.music_file:
+    #         file_extension = os.path.splitext(self.music_file.name)[1].lower()
+    #         audio = MutagenFile(self.music_file.path)
+            
+    #         if file_extension == '.mp3':
+    #             self.length = audio.info.length
+    #         elif file_extension == '.m4a':
+    #             self.length = audio.info.length
+    #         # 다른 오디오 형식을 처리하려면 여기에 추가
+            
+    #     super(Music, self).save(*args, **kwargs)
+
     author=models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     liker=models.ManyToManyField(User,related_name='like_music',default=[],blank=True)
 
@@ -59,4 +77,5 @@ class Music(models.Model):
             audio = MP4(self.music_file.path)
             self.length = audio.info.length
         super(Music, self).save(*args, **kwargs)
+
 
