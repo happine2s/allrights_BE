@@ -4,7 +4,7 @@ from rest_framework import serializers
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['userid', 'username', 'password']
+        fields = ['id','userid', 'username', 'password']
     
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -16,10 +16,10 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 
-class MypageSerializer(serializers.ModelSerializer):
+class UpdateMypageSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['userid', 'username', 'password','img','bio']
+        fields = ['id','userid', 'username', 'password','img','bio']
     
     password = serializers.CharField(write_only=True)
     
@@ -40,4 +40,4 @@ class MypageSerializer(serializers.ModelSerializer):
 class MypageUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['userid', 'username', 'img','bio']
+        fields = ['id','userid', 'username', 'img','bio']

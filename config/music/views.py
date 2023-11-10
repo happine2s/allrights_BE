@@ -118,15 +118,31 @@ def download_music(request, music_id):
 
 class LikeMusic(APIView):
     def get(self, request, music_pk):
-        music = get_object_or_404(Music, id=music_pk)
-        serializer = LikeMusicSerializer(music)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        try:
+            music = get_object_or_404(Music, id=music_pk)
+            serializer = LikeMusicSerializer(music)
+            data={
+                "msg":"ok",
+                "like_userid":serializer.data
+            }
+            return Response(data, status=status.HTTP_200_OK)
+        except:
+            data={
+                "msg":"해당 게시물이 존재하지 않습니다."
+            }
+            return Response(data, status=status.HTTP_404_NOT_FOUND)
     
     def post(self, request, music_pk):
         post = get_object_or_404(Music, id=music_pk)
         if request.user in post.liker.all():
             post.liker.remove(request.user)
-            return Response("unlike", status=status.HTTP_200_OK)
+            data={
+                "msg":"unlike",
+            }
+            return Response(data, status=status.HTTP_200_OK)
         else:
             post.liker.add(request.user)
-            return Response("like", status=status.HTTP_200_OK)
+            data={
+                "msg":"like"
+            }
+            return Response(data, status=status.HTTP_200_OK)
