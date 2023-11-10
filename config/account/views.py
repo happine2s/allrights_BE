@@ -5,13 +5,9 @@ from music.serializers import *
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from django.contrib import auth
 from django.contrib.auth import authenticate
-from django.contrib.auth.hashers import check_password
 from django.http import Http404
-from rest_framework_simplejwt.views import TokenObtainPairView
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404
 import jwt
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from config.settings import SECRET_KEY
@@ -133,55 +129,96 @@ class auth(APIView):
 
 
 class update_password(APIView):
-    def post(self, request):
+    def post(self, request,user_pk):
         try:
-            user=request.user
-            origin_password=request.data['origin_password']
-
-            if check_password(origin_password,user.password):
-                password1=request.data["password1"]
-                password2=request.data["password2"]
-
-                if password1==password2:
-                    user.set_password(password1)
-                    user.save()
-                    auth.login(request,user)
-                    data={
-                        "msg":"ok"
-                    }
-                    return Response(data,status=status.HTTP_202_ACCEPTED)
-                else:
-                    data={
-                        "msg":"비밀번호가 일치하지 않습니다."
-                    }
-                    return Response(data,status=status.HTTP_406_NOT_ACCEPTABLE)
-            
+            access = request.COOKIES['access']
+            payload = jwt.decode(access, SECRET_KEY, algorithms=['HS256'])
+            pk = payload.get('user_id')
+            if pk==user_pk:
+                user = get_object_or_404(User, pk=user_pk)
             else:
                 data={
-                        "msg":"기존 비밀번호가 알맞지 않습니다."
-                    }
+                    "msg":"해당 회원 정보를 수정할 권한이 없습니다. 토큰을 확인해주세요."
+                }
                 return Response(data,status=status.HTTP_401_UNAUTHORIZED)
+
+            password1=request.data["password1"]
+            password2=request.data["password2"]
+
+            if password1==password2:
+                user.set_password(password1)
+                user.save()
+                data={
+                    "msg":"ok"
+                }
+                return Response(data,status=status.HTTP_202_ACCEPTED)
+            else:
+                data={
+                    "msg":"비밀번호가 일치하지 않습니다."
+                }
+                return Response(data,status=status.HTTP_406_NOT_ACCEPTABLE)
+    
         except:
             data={
-                    "msg":"로그인 상태가 아닙니다."
+                    "msg":"올바르지 않은 토큰입니다."
                 }
             return Response(data,status=status.HTTP_403_FORBIDDEN)
             
 
 class update_mypage(APIView): # 로그인한 사용자의 정보 수정
-    permission_classes = (IsAuthenticated,)
     serializer_class = UpdateMypageSerializer
 
-    def put(self, request): # 비밀번호는 변경 안됨
-        serializer_data = request.data
-        serializer = self.serializer_class(
-            request.user, data=serializer_data, partial=True
-        )
-        
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def put(self, request, user_pk): # 비밀번호는 변경 안됨
+        try:
+            access = request.COOKIES['access']
+            payload = jwt.decode(access, SECRET_KEY, algorithms=['HS256'])
+            pk = payload.get('user_id')
+            
+            if pk==user_pk:
+                user = get_object_or_404(User, pk=pk)
+                #login_user_serializer = UserSerializer(instance=user)
+                request_serializer = request.data
+                serializer = self.serializer_class(
+                    user, data=request_serializer, partial=True
+                )
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                data={
+                    "msg":"해당 회원 정보를 수정할 권한이 없습니다. 토큰을 확인해주세요."
+                }
+                return Response(data,status=status.HTTP_401_UNAUTHORIZED)
+        except(jwt.exceptions.ExpiredSignatureError):
+            # 토큰 만료 시 토큰 갱신
+            data = {'refresh': request.COOKIES.get('refresh', None)}
+            serializer = TokenRefreshSerializer(data=data)
+            if serializer.is_valid(raise_exception=True):
+                access = serializer.data.get('access', None)
+                refresh = serializer.data.get('refresh', None)
+                payload = jwt.decode(access, SECRET_KEY, algorithms=['HS256'])
+                pk = payload.get('user_id')
+
+                user = get_object_or_404(User, pk=pk)
+                serializer = UserSerializer(instance=user)
+                res = Response(serializer.data, status=status.HTTP_200_OK)
+                res.set_cookie('access', access)
+                res.set_cookie('refresh', refresh)
+
+                data={
+                    "msg":"토큰이 만료되어 갱신되었습니다. 다시 시도해주세요.",
+                    "user_info":res
+                }
+                return Response(data,status=status.HTTP_100_CONTINUE)
+            raise jwt.exceptions.InvalidTokenError
+
+        except(jwt.exceptions.InvalidTokenError):
+            # 사용 불가능한 토큰일 때
+            data={
+                "msg":"올바르지 않은 토큰입니다."
+            }
+            return Response(data,status=status.HTTP_400_BAD_REQUEST)
+
 
 class mypage(APIView): # url의 user_pk에 대한 마이페이지
     def get_object(self, user_pk):
