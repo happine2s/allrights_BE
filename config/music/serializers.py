@@ -29,7 +29,7 @@ class MypageMusicSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Music
-        fields = ['id', 'title', 'username'] # music_img 필드 추가하기
+        fields = ['id', 'title', 'username','music_image','music_file'] # music_img 필드 추가하기
 
 
 class LikeMusicSerializer(serializers.ModelSerializer):
