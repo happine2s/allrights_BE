@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from .models import User
 from .serializers import *
 from music.models import Music
@@ -11,9 +10,6 @@ from django.contrib import auth
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import check_password
 from django.http import Http404
-from django.core import serializers
-import json
-from rest_framework.utils.encoders import JSONEncoder
 
 
 class signup(APIView):
@@ -100,7 +96,7 @@ class update_password(APIView):
 
 class update_mypage(APIView): # 로그인한 사용자의 정보 수정
     permission_classes = (IsAuthenticated,)
-    serializer_class = MypageSerializer
+    serializer_class = UpdateMypageSerializer
 
     def put(self, request): # 비밀번호는 변경 안됨
         serializer_data = request.data
