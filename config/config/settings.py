@@ -158,7 +158,7 @@ CORS_ORIGIN_WHITELIST = ['http://127.0.0.1:8000' ,'http://localhost:5173']
 CORS_ALLOW_CREDENTIALS = True
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5), # ACCESS Token의 유효기간
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1), # ACCESS Token의 유효기간
     'REFRESH_TOKEN_LIFETIME': timedelta(days=50), # Refresh 토큰의 유효기간 
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,

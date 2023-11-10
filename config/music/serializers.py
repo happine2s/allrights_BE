@@ -15,6 +15,7 @@ class MusicSerializer(serializers.ModelSerializer):
         model = Music
         fields = '__all__'
 
+
 class MypageMusicSerializer(serializers.ModelSerializer):
     username=serializers.SerializerMethodField()
 
