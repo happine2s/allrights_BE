@@ -8,6 +8,9 @@ from music.serializers import *
 from django.http import FileResponse
 from django.http import Http404
 from .serializers import MusicSerializer
+import jwt
+from config.settings import SECRET_KEY
+from account.models import User
 
 
 class MusicList(APIView):
@@ -35,8 +38,11 @@ class MusicList(APIView):
         serializer = MusicSerializer(data=request.data)
         if serializer.is_valid():
             try: # 요청 데이터에 유저 정보가 있다면 작성자에 추가
-                if self.request.data['author']:
-                    serializer.save(author=self.request.user)
+                access = request.COOKIES['access']
+                payload = jwt.decode(access, SECRET_KEY, algorithms=['HS256'])
+                pk = payload.get('user_id')
+                user = get_object_or_404(User, pk=pk)
+                serializer.save(author=user)
             except: # 없다면 null
                 serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -134,14 +140,19 @@ class LikeMusic(APIView):
     
     def post(self, request, music_pk):
         post = get_object_or_404(Music, id=music_pk)
-        if request.user in post.liker.all():
-            post.liker.remove(request.user)
+        access = request.COOKIES['access']
+        payload = jwt.decode(access, SECRET_KEY, algorithms=['HS256'])
+        pk = payload.get('user_id')
+        user = get_object_or_404(User, pk=pk)
+
+        if user in post.liker.all():
+            post.liker.remove(user.id)
             data={
                 "msg":"unlike",
             }
             return Response(data, status=status.HTTP_200_OK)
         else:
-            post.liker.add(request.user)
+            post.liker.add(user.id)
             data={
                 "msg":"like"
             }

@@ -5,13 +5,9 @@ from music.serializers import *
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from django.contrib import auth
 from django.contrib.auth import authenticate
-from django.contrib.auth.hashers import check_password
 from django.http import Http404
-from rest_framework_simplejwt.views import TokenObtainPairView
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404
 import jwt
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from config.settings import SECRET_KEY
