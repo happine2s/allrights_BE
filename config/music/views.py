@@ -1,4 +1,3 @@
-from datetime import timedelta
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -8,12 +7,7 @@ from django.db.models import Q
 from music.serializers import *
 from django.http import FileResponse
 from django.http import Http404
-from rest_framework.parsers import MultiPartParser, FormParser, FileUploadParser
-from rest_framework import generics
 from .serializers import MusicSerializer
-from mutagen import File as MutagenFile
-from io import BytesIO
-
 
 
 class MusicList(APIView):
@@ -36,45 +30,8 @@ class MusicList(APIView):
         
         serializer = MusicSerializer(music, many=True)
         return Response(serializer.data)
-
-
-class MusicUpload(generics.CreateAPIView):
-    queryset = Music.objects.all()
-    serializer_class = MusicSerializer
-    parser_classes = (FileUploadParser, MultiPartParser)
-
+    
     def post(self, request):
-        music_file = request.data['music_file']
-
-        # Music 모델 생성 및 파일 및 기타 필드 저장
-        music = Music()
-        music.music_file = music_file
-        music.title = request.data['title']
-        music.music_type = request.data['music_type']
-        music.genre = request.data['genre']
-        music.instruments = request.data['instruments']
-        music.mood = request.data['mood']
-        music.description = request.data['description']
-        music.music_image = request.data.get('music_image', None)
-
-        # 파일을 DB에 저장
-        music.save()
-
-        # # Mutagen을 사용하여 length 계산
-        # file_extension = music_file.name.split('.')[-1].lower()
-        # audio = MutagenFile(music_file.temporary_file_path())  # 파일 이름 설정을 위해 temporary_file_path() 사용
-
-        # if file_extension in ['.mp3', '.m4a']:
-        #     # 음원 길이를 초로 가져오기
-        #     #length_in_seconds = int(audio.info.length)
-
-        #     # 초를 분과 초로 변환하여 DurationField에 저장
-        #     music.length = timedelta(audio.info.length)
-        #     music.save()
-
-        serializer = MusicSerializer(music)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
         serializer = MusicSerializer(data=request.data)
         if serializer.is_valid():
             try: # 요청 데이터에 유저 정보가 있다면 작성자에 추가
