@@ -15,26 +15,39 @@ from account.models import User
 
 class MusicList(APIView):
     def get(self, request):
+        effect_music=Music.objects.filter(music_type='effect')
+        bg_music=Music.objects.filter(music_type='background')
+
         sort_by = request.query_params.get('sort_by', '-upload_date')  # 기본 정렬은 업로드 날짜
         if sort_by == 'length':
-            music = Music.objects.all().order_by('length')
+            e_music = effect_music.order_by('length')
+            b_music=bg_music.order_by('length')
 
         elif sort_by == '-length':
-            music = Music.objects.all().order_by('-length')
+            e_music = effect_music.order_by('-length')
+            b_music=bg_music.order_by('length')
         
         elif sort_by == 'downloads':
-            music = Music.objects.all().order_by('downloads')
+            e_music = effect_music.order_by('downloads')
+            b_music=bg_music.order_by('downloads')
         
         elif sort_by == '-downloads':
-            music = Music.objects.all().order_by('-downloads')
+            e_music = effect_music.order_by('-downloads')
+            b_music=bg_music.order_by('-downloads')
         
         else:
-            music = Music.objects.all().order_by('-upload_date')
+            e_music = effect_music.order_by('-upload_date')
+            b_music=bg_music.order_by('-upload_date')
         
-        serializer = MusicSerializer(music, many=True)
-        return Response(serializer.data)
+        e_serializer = MusicSerializer(e_music, many=True)
+        b_serializer = MusicSerializer(b_music, many=True)
+        data={
+            "effect_music":e_serializer.data,
+            "bg_music":b_serializer.data
+        }
+        return Response(data,status=status.HTTP_200_OK)
     
-    def post(self, request):
+    def post(self, request): # 음악 게시물 업로드
         serializer = MusicSerializer(data=request.data)
         if serializer.is_valid():
             try: # 요청 데이터에 유저 정보가 있다면 작성자에 추가
@@ -49,7 +62,7 @@ class MusicList(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class MusicDetail(APIView):
+class MusicDetail(APIView): # 음악 게시물 상세 페이지
     def get_object(self, pk):
         try:
             return Music.objects.get(pk=pk)
