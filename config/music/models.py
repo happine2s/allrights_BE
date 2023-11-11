@@ -56,6 +56,7 @@ class Music(models.Model):
     genre = models.CharField(max_length=100, choices=GENRE_TYPES)
     instruments = models.CharField(max_length=100, choices=INSTRUMENTS_TYPES)
     mood = models.CharField(max_length=100, choices=MOOD_TYPES)
+    dblength = models.CharField(max_length=10,default="0:00:00")
     length = models.CharField(max_length=10, choices=LENGTH_TYPES)
     description = models.TextField()
     upload_date = models.DateTimeField(default=timezone.now)  # 업로드 날짜 및 시간
@@ -63,11 +64,3 @@ class Music(models.Model):
     music_image = models.ImageField(upload_to='image/',blank=True,null=True)
     author=models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     liker=models.ManyToManyField(User,related_name='like_music',default=[],blank=True)
-
-    # def save(self, *args, **kwargs):
-    #     if not self.length and self.music_file:
-    #         audio = MP4(self.music_file.path)
-    #         self.length = audio.info.length
-    #     super(Music, self).save(*args, **kwargs)
-
-

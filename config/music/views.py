@@ -1,3 +1,6 @@
+from datetime import timedelta
+import datetime
+import os
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -8,10 +11,12 @@ from music.serializers import *
 from django.http import FileResponse
 from django.http import Http404
 from .serializers import MusicSerializer
+from mutagen.mp3 import MP3 
+from mutagen.mp4 import MP4
+import sqlite3
 import jwt
 from config.settings import SECRET_KEY
 from account.models import User
-
 
 class MusicList(APIView):
     def get(self, request):
@@ -58,8 +63,52 @@ class MusicList(APIView):
                 serializer.save(author=user)
             except: # 없다면 null
                 serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+            #음원 길이 계산
+            songs = Music.objects.all()
+
+            for song in songs:
+            # 음원 파일의 절대 경로 가져오기
+                music_file_path = song.music_file.path
+                try:
+                # Mutagen을 사용하여 음원 길이 계산
+                    audio = MP3(music_file_path)
+                    length_in_seconds = int(audio.info.length)
+
+                # 데이터베이스 업데이트
+                    song.dblength = str(datetime.timedelta(seconds=length_in_seconds))
+                    song.save()
+
+                except Exception as e:
+                    print(f"Error processing {music_file_path}: {e}")
+
+            serializer = MusicSerializer(songs, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            #return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MusicLengthUpdate(APIView):
+    def get(self, request, format=None):
+        songs = Music.objects.all()
+
+        for song in songs:
+            # 음원 파일의 절대 경로 가져오기
+            music_file_path = song.music_file.path
+            try:
+                # Mutagen을 사용하여 음원 길이 계산
+                audio = MP3(music_file_path)
+                length_in_seconds = int(audio.info.length)
+
+                # 데이터베이스 업데이트
+                song.length = length_in_seconds
+                song.save()
+
+            except Exception as e:
+                print(f"Error processing {music_file_path}: {e}")
+
+        serializer = MusicSerializer(songs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class MusicDetail(APIView): # 음악 게시물 상세 페이지
