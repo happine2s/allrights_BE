@@ -44,13 +44,19 @@ class Music(models.Model):
         ('violin', '바이올린'),
     )
 
+    LENGTH_TYPES = (
+        ('short', '1분 이내'),
+        ('medium', '1~5분'),
+        ('long', '5분 이상'),
+    )
+
     title = models.CharField(max_length=100)
     music_file = models.FileField(upload_to='music/')
     music_type = models.CharField(max_length=100, choices=MUSIC_TYPES)
     genre = models.CharField(max_length=100, choices=GENRE_TYPES)
     instruments = models.CharField(max_length=100, choices=INSTRUMENTS_TYPES)
     mood = models.CharField(max_length=100, choices=MOOD_TYPES)
-    length = models.IntegerField(default=0)
+    length = models.CharField(max_length=10, choices=LENGTH_TYPES)
     description = models.TextField()
     upload_date = models.DateTimeField(default=timezone.now)  # 업로드 날짜 및 시간
     downloads = models.PositiveIntegerField(default=0)  # 다운로드 횟수
