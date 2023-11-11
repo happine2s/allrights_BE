@@ -99,7 +99,7 @@ class auth(APIView):
     def get(self, request):
         try:
             # access token을 decode 해서 유저 id 추출 => 유저 식별
-            access = request.COOKIES['access']
+            access = str.replace(str(request.headers["Authorization"]), 'Bearer ', '')
             payload = jwt.decode(access, SECRET_KEY, algorithms=['HS256'])
             pk = payload.get('user_id')
             user = get_object_or_404(User, pk=pk)
@@ -131,7 +131,7 @@ class auth(APIView):
 class update_password(APIView):
     def post(self, request,user_pk):
         try:
-            access = request.COOKIES['access']
+            access = str.replace(str(request.headers["Authorization"]), 'Bearer ', '')
             payload = jwt.decode(access, SECRET_KEY, algorithms=['HS256'])
             pk = payload.get('user_id')
             if pk==user_pk:
@@ -170,7 +170,7 @@ class update_mypage(APIView): # 로그인한 사용자의 정보 수정
 
     def put(self, request, user_pk): # 비밀번호는 변경 안됨
         try:
-            access = request.COOKIES['access']
+            access = str.replace(str(request.headers["Authorization"]), 'Bearer ', '')
             payload = jwt.decode(access, SECRET_KEY, algorithms=['HS256'])
             pk = payload.get('user_id')
             

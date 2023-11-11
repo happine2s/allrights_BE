@@ -51,7 +51,7 @@ class MusicList(APIView):
         serializer = MusicSerializer(data=request.data)
         if serializer.is_valid():
             try: # 요청 데이터에 유저 정보가 있다면 작성자에 추가
-                access = request.COOKIES['access']
+                access = str.replace(str(request.headers["Authorization"]), 'Bearer ', '')
                 payload = jwt.decode(access, SECRET_KEY, algorithms=['HS256'])
                 pk = payload.get('user_id')
                 user = get_object_or_404(User, pk=pk)
@@ -153,7 +153,8 @@ class LikeMusic(APIView):
     
     def post(self, request, music_pk):
         post = get_object_or_404(Music, id=music_pk)
-        access = request.COOKIES['access']
+        # access = request.COOKIES['access']
+        access = str.replace(str(request.headers["Authorization"]), 'Bearer ', '')
         payload = jwt.decode(access, SECRET_KEY, algorithms=['HS256'])
         pk = payload.get('user_id')
         user = get_object_or_404(User, pk=pk)
