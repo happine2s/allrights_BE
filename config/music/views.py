@@ -64,25 +64,23 @@ class MusicList(APIView):
             except: # 없다면 null
                 serializer.save()
             
-            #음원 길이 계산
-            songs = Music.objects.all()
-
-            for song in songs:
-            # 음원 파일의 절대 경로 가져오기
+            try:
+                # 저장한 음악 객체
+                song = Music.objects.latest('id')
+                # 음원 파일의 절대 경로 가져오기
                 music_file_path = song.music_file.path
-                try:
+                
                 # Mutagen을 사용하여 음원 길이 계산
-                    audio = MP3(music_file_path)
-                    length_in_seconds = int(audio.info.length)
-
+                audio = MP3(music_file_path)
+                length_in_seconds = int(audio.info.length)
+                
                 # 데이터베이스 업데이트
-                    song.dblength = str(datetime.timedelta(seconds=length_in_seconds))
-                    song.save()
+                song.dblength = str(datetime.timedelta(seconds=length_in_seconds))
+                song.save()
+            except Exception as e:
+                print(f"Error processing {music_file_path}: {e}")
 
-                except Exception as e:
-                    print(f"Error processing {music_file_path}: {e}")
-
-            serializer = MusicSerializer(songs, many=True)
+            serializer = MusicSerializer(song)
             return Response(serializer.data, status=status.HTTP_200_OK)
             #return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
